@@ -1,0 +1,19 @@
+galaxy_info:
+  author:      John Seregin seregin.john@gmail.com
+  license:     license Apache-2.0
+  description: ansible role ''
+  min_ansible_version: 2.9
+
+  platforms:
+  # - name:    Windows
+  #   versions:
+  #   - 2012
+  #   - 2016
+  #   - 2019
+  # - name:    Debian
+  #   versions:
+  #   - wheezy
+  #   - jessie
+  #   - stretch
+  #   - buster
+  #   - bullseye

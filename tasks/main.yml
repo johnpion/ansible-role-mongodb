@@ -1,0 +1,84 @@
+- name: Install gpg
+  ansible.builtin.apt:
+    name: gpg
+    update_cache: true
+    autoclean: true
+
+- name: Add apt-key
+  ansible.builtin.apt_key:
+    url: "https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc"
+
+- name: Apt repo
+  ansible.builtin.apt_repository:
+    repo: "deb http://repo.mongodb.org/apt/debian {{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }} main"
+  # register: mongodb_apt_repo
+
+# - name: Apt update
+#   ansible.builtin.apt:
+#     update_cache: true
+#   when: mongodb_apt_repo.changed
+
+- name: Install software
+  ansible.builtin.apt:
+    name:
+      - mongodb-org
+      - python-pymongo
+    update_cache: true
+    autoclean: true
+  register: mongodb_install
+  # notify: restart mongodb
+
+# - name:             start mongodb
+#   service:          name=mongod state=restarted
+#   when:             mongodb_install.changed
+
+- name: Check if auth is enabled
+  ansible.builtin.command:
+    cmd: "grep 'authorization: enabled' /etc/mongod.conf"
+  register: mongodb_auth_enabled
+  when: mongodb_admin_password is defined
+  ignore_errors: true
+  changed_when: false
+
+- name: Create admin
+  community.mongodb.mongodb_user:
+    database: admin
+    name: admin
+    password: "{{ mongodb_admin_password }}"
+    roles: "{{ mongodb_admin_roles }}"
+  when:
+    - mongodb_admin_password is defined
+    - "'authorization: enabled' not in mongodb_auth_enabled.stdout"
+  register: mongodb_create_admin
+  no_log: true
+
+- name: Add authorization
+  ansible.builtin.lineinfile:
+    path: /etc/mongod.conf
+    line: "security:\n  authorization: enabled"
+    insertafter: "#security:"
+  when: mongodb_create_admin.changed
+  register: mongodb_auth
+  warn: false
+
+- name: Restart mongodb
+  ansible.builtin.service:
+    name: mongod
+    state: restarted
+  when: mongodb_auth.changed
+  warn: false
+
+- name: Create user
+  community.mongodb.mongodb_user:
+    login_user: admin
+    login_password: "{{ mongodb_admin_password }}"
+    login_database: admin
+    database: "{{ item.database }}"
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    roles: "{% if item.roles is defined %}{{ item.roles }}{% else %}{{ mongodb_default_roles }}{% endif %}"
+  with_items:
+    - "{{ mongodb_user }}"
+  when: mongodb_user is defined
+  no_log: true
+  # tags:             qa

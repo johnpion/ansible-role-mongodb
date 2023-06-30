@@ -1,7 +1,7 @@
 galaxy_info:
   author: Ivan Serohin
   license: license Apache-2.0
-  role_name: 'mongodb'
+  role_name: mongodb
   namespace: johnpion
   description: ansible role 'mongodb'
   min_ansible_version: '2.14'

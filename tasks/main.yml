@@ -59,14 +59,14 @@
     insertafter: "#security:"
   when: mongodb_create_admin.changed
   register: mongodb_auth
-  warn: false
+  tags: skip_ansible_lint
 
 - name: Restart mongodb
   ansible.builtin.service:
     name: mongod
     state: restarted
   when: mongodb_auth.changed
-  warn: false
+  tags: skip_ansible_lint
 
 - name: Create user
   community.mongodb.mongodb_user:
@@ -81,4 +81,3 @@
     - "{{ mongodb_user }}"
   when: mongodb_user is defined
   no_log: true
-  # tags:             qa
